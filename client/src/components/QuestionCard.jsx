@@ -1,16 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../App';
 
 function QuestionCard({ question, questionIndex, totalQuestions, selectedAnswer, onAnswerSelect }) {
   const { language } = useLanguage();
   const isRTL = language === 'he';
   
+  // Local state for this question's answer
+  const [localAnswer, setLocalAnswer] = useState(selectedAnswer || null);
+  
+  // Update local state when selectedAnswer prop changes (but only if it's different)
+  useEffect(() => {
+    if (selectedAnswer !== localAnswer) {
+      setLocalAnswer(selectedAnswer || null);
+    }
+  }, [selectedAnswer]);
+  
   // Safe numbering - derive from data, not possibly undefined values
   const humanNumber = totalQuestions ? questionIndex + 1 : 0;
   
-  // Use the exam-scoped question key
-  const qKey = String(question._qid);
-  const groupName = `ans-${qKey}`;
+  const handleAnswerClick = (answerKey) => {
+    // Update local state immediately
+    setLocalAnswer(answerKey);
+    // Notify parent component
+    onAnswerSelect(question.id, answerKey);
+  };
   
   return (
     <div className={`border border-gray-200 rounded-lg p-6 ${isRTL ? 'text-right' : ''}`}>
@@ -19,45 +32,28 @@ function QuestionCard({ question, questionIndex, totalQuestions, selectedAnswer,
         {question.question}
       </h3>
       
-      <div 
-        className="space-y-3"
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div className="space-y-3">
         {Object.entries(question.choices).map(([key, value], optIdx) => {
-          const optId = `opt-${qKey}-${optIdx}`;
-          const checked = selectedAnswer === key;
+          const isSelected = localAnswer === key;
+          const optId = `question-${question.id}-option-${key}-${questionIndex}`;
           
           return (
-            <div key={optId} className="rounded-lg border bg-white">
-              <input
-                id={optId}
-                type="radio"
-                name={groupName}
-                value={key}
-                checked={checked}
-                onChange={() => onAnswerSelect(key)}
-                className="sr-only"
-              />
-              <label
-                htmlFor={optId}
-                className={`block cursor-pointer p-4 hover:bg-slate-50 transition duration-200 ${
-                  checked ? 'bg-blue-100 border-2 border-blue-500' : 'bg-gray-50 border-2 border-transparent'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAnswerSelect(key);
-                }}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
+            <div 
+              key={`${question.id}-${key}-${optIdx}`}
+              className={`rounded-lg border cursor-pointer transition duration-200 ${
+                isSelected ? 'bg-blue-100 border-2 border-blue-500' : 'bg-gray-50 border-2 border-transparent hover:bg-slate-50'
+              }`}
+              onClick={() => handleAnswerClick(key)}
+            >
+              <div className="block p-4">
                 <div className="flex items-start gap-3">
                   <span className={`mt-1 inline-block h-4 w-4 rounded-full border ${
-                    checked ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                    isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
                   }`}></span>
                   <span className="font-semibold">{key}.</span>
                   <span className="flex-1">{value}</span>
                 </div>
-              </label>
+              </div>
             </div>
           );
         })}

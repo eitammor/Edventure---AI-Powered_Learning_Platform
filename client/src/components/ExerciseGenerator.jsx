@@ -15,6 +15,7 @@ function ExerciseGenerator({ onExerciseCompleted, selectedExercise }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [submittedExercise, setSubmittedExercise] = useState(null);
 
   // Load saved data from localStorage or selected exercise
   useEffect(() => {
@@ -57,6 +58,7 @@ function ExerciseGenerator({ onExerciseCompleted, selectedExercise }) {
     }
   }, [currentLevel, userAnswers, exercises]);
 
+
   const handleGenerate = async () => {
     if (!topic.trim()) {
       setError(t.errorTopicRequired);
@@ -98,35 +100,51 @@ function ExerciseGenerator({ onExerciseCompleted, selectedExercise }) {
     }
   };
 
+
   const handleAnswerSelect = (questionId, answer) => {
-    setUserAnswers(prev => {
-      const newAnswers = {
-        ...prev,
-        [`${currentLevel}-${questionId}`]: answer
-      };
-      
-      // Save answers to localStorage with proper structure
-      const savedAnswers = JSON.parse(localStorage.getItem('lastAnswers') || '{}');
-      const exerciseKey = `${currentLevel}-${topic}`;
-      if (!savedAnswers[exerciseKey]) {
-        savedAnswers[exerciseKey] = {};
-      }
-      savedAnswers[exerciseKey][questionId] = answer;
-      localStorage.setItem('lastAnswers', JSON.stringify(savedAnswers));
-      
-      // Update progress with the new answers
-      const currentExercise = exercises.find(e => e.level === currentLevel);
-      const answeredCount = Object.keys(newAnswers).filter(
-        key => key.startsWith(`${currentLevel}-`)
-      ).length;
-      setProgress((answeredCount / currentExercise.questions.length) * 100);
-      
-      return newAnswers;
+    const answerKey = `${currentLevel}-${questionId}`;
+    
+    // Create completely new state object
+    const newAnswers = {};
+    
+    // Copy all existing answers
+    Object.keys(userAnswers).forEach(key => {
+      newAnswers[key] = userAnswers[key];
     });
+    
+    // Set the new answer
+    newAnswers[answerKey] = answer;
+    
+    // Update state
+    setUserAnswers(newAnswers);
+    
+    // Save to localStorage
+    const savedAnswers = JSON.parse(localStorage.getItem('lastAnswers') || '{}');
+    const exerciseKey = `${currentLevel}-${topic}`;
+    if (!savedAnswers[exerciseKey]) {
+      savedAnswers[exerciseKey] = {};
+    }
+    savedAnswers[exerciseKey][questionId] = answer;
+    localStorage.setItem('lastAnswers', JSON.stringify(savedAnswers));
+    
+    // Update progress
+    const currentExercise = exercises.find(e => e.level === currentLevel);
+    const answeredCount = Object.keys(newAnswers).filter(
+      key => key.startsWith(`${currentLevel}-`)
+    ).length;
+    setProgress((answeredCount / currentExercise.questions.length) * 100);
   };
 
   const handleSubmit = () => {
-    // Don't overwrite the properly structured answers - they're already saved in handleAnswerSelect
+    // Store the current exercise data before showing results
+    const currentExercise = exercises.find(e => e.level === currentLevel);
+    setSubmittedExercise({
+      ...currentExercise,
+      level: currentLevel,
+      topic,
+      subtopic
+    });
+    
     setShowResults(true);
     
     // Save score to history
@@ -170,6 +188,12 @@ function ExerciseGenerator({ onExerciseCompleted, selectedExercise }) {
     setShowResults(false);
     setUserAnswers({});
     setProgress(0);
+    setSubmittedExercise(null);
+
+    const savedAnswers = JSON.parse(localStorage.getItem('lastAnswers') || '{}');
+    const exerciseKey = `${currentLevel}-${topic}`;
+    savedAnswers[exerciseKey] = {};
+    localStorage.setItem('lastAnswers', JSON.stringify(savedAnswers));
   };
 
   return (
@@ -294,7 +318,7 @@ function ExerciseGenerator({ onExerciseCompleted, selectedExercise }) {
               .find(e => e.level === currentLevel)
               .questions.map((question, index) => (
                 <QuestionCard
-                  key={question.id}
+                  key={`${currentLevel}-${question.id}-${index}`}
                   question={question}
                   questionIndex={index}
                   totalQuestions={exercises.find(e => e.level === currentLevel).questions.length}
@@ -330,9 +354,9 @@ function ExerciseGenerator({ onExerciseCompleted, selectedExercise }) {
       )}
 
       {/* Results Display */}
-      {showResults && (
+      {showResults && submittedExercise && (
         <ResultsDisplay
-          exercises={exercises}
+          exercises={[submittedExercise]}
           currentLevel={currentLevel}
           userAnswers={userAnswers}
           onRetry={resetExercise}
@@ -342,6 +366,7 @@ function ExerciseGenerator({ onExerciseCompleted, selectedExercise }) {
             setShowResults(false);
             setUserAnswers({});
             setProgress(0);
+            setSubmittedExercise(null);
           }}
           onContinueToLevel={(level) => {
             // If we're continuing to a level that's not in current exercises, load it from history
@@ -360,6 +385,7 @@ function ExerciseGenerator({ onExerciseCompleted, selectedExercise }) {
             setCurrentLevel(level);
             setShowResults(false);
             setProgress(0);
+            setSubmittedExercise(null);
           }}
         />
       )}

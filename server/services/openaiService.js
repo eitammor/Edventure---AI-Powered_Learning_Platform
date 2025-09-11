@@ -12,19 +12,25 @@ async function generateExercises(topic, subtopic) {
 
   const fullTopic = subtopic ? `${topic} - ${subtopic}` : topic;
   
-  const prompt = `Generate 3 multiple-choice exercises about "${fullTopic}".
+  const prompt = `You must generate exactly 3 multiple-choice exercises about "${fullTopic}".
+
+  CRITICAL REQUIREMENTS - FOLLOW EXACTLY:
+  1. Generate exactly 3 exercises (Beginner, Intermediate, Expert)
+  2. Each exercise MUST contain exactly 10 questions - NO FEWER, NO MORE
+  3. Total questions: 30 (10 per exercise)
   
-  Create one exercise for each level:
-  1. Beginner level (basic concepts and definitions)
-  2. Intermediate level (application and understanding)
-  3. Expert level (complex analysis and synthesis)
+  Exercise Structure:
+  - BEGINNER exercise: exactly 10 questions about basic concepts
+  - INTERMEDIATE exercise: exactly 10 questions about application  
+  - EXPERT exercise: exactly 10 questions about complex analysis
   
-  Each exercise should have exactly 10 questions.
-  Each question must have:
-  - A clear question
-  - 4 answer choices (A, B, C, D)
+  Each question MUST have:
+  - Clear question text
+  - Exactly 4 answer choices (A, B, C, D)
   - Only 1 correct answer
-  - An explanation for why the answer is correct
+  - Detailed explanation
+  
+  IMPORTANT: If you generate fewer than 10 questions per exercise, the system will fail. You must generate exactly 10 questions for each of the 3 exercises.
   
   Return the response in this exact JSON format:
   {
@@ -55,18 +61,31 @@ async function generateExercises(topic, subtopic) {
       messages: [
         {
           role: "system",
-          content: "You are an expert educator creating educational exercises. Always return valid JSON."
+          content: "You are an expert educator. You MUST follow instructions exactly. When asked for a specific number of questions, you must generate exactly that number. No more, no less. Always return valid JSON."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 0.7,
+      temperature: 0.2,
       response_format: { type: "json_object" }
     });
 
     const response = JSON.parse(completion.choices[0].message.content);
+    
+    // Validate the response
+    if (!response.exercises || response.exercises.length !== 3) {
+      throw new Error(`Invalid response: Expected exactly 3 exercises, got ${response.exercises?.length || 0}`);
+    }
+    
+    response.exercises.forEach((exercise, index) => {
+      if (!exercise.questions || exercise.questions.length !== 10) {
+        throw new Error(`Invalid response: Exercise ${exercise.level || index + 1} has ${exercise.questions?.length || 0} questions, expected 10`);
+      }
+    });
+    
+    console.log('✅ Validation passed: 3 exercises with 10 questions each');
     return response;
   } catch (error) {
     console.error('OpenAI API error:', error);
