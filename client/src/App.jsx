@@ -26,6 +26,14 @@ function AppContent() {
   const [selectedExercise, setSelectedExercise] = useState(null);
   const location = useLocation();
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const currentView = searchParams.get('currentView');
+    if (currentView) {
+      setCurrentView(currentView);
+    }
+  }, [location.search]);
+
   // Don't show header and navigation on exam pages
   const isExamPage = location.pathname.startsWith('/exam/');
 

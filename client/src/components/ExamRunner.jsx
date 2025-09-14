@@ -52,7 +52,7 @@ function ExamRunner() {
         setIsLoading(false);
         return;
       }
-
+      //Load questions
       const examQuestions = getExamQuestions(examData);
       if (examQuestions.length === 0) {
         setError('No questions found for this exam');
@@ -294,7 +294,7 @@ function ExamRunner() {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); navigate('/app'); }}
+              onClick={(e) => { e.stopPropagation(); navigate('/app?currentView=dashboard'); }}
               className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200"
             >
               {t.exitExam || 'Exit Exam'}

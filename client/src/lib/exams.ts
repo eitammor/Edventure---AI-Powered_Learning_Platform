@@ -1,5 +1,4 @@
 // Exam utility functions
-// Note: This file uses JSDoc comments for type documentation instead of TypeScript interfaces
 
 export function buildTopicExam(topicId) {
   // Load all exercises from localStorage for this topic

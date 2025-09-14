@@ -69,7 +69,7 @@ function shuffleArray(array) {
 }
 
 // Helper function to generate short random exam ID
-function generateExamId(): string {
+function generateExamId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < 8; i++) {

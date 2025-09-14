@@ -39,7 +39,6 @@ function Dashboard({ onSelectExercise, onBackToGenerator }) {
     const processedExercises = savedExercises.map(exercise => {
       const exerciseKey = `${exercise.level}-${exercise.topic}`;
       const userAnswers = savedAnswers[exerciseKey] || {};
-      
       // Count answered questions for this specific exercise
       const answeredCount = Object.keys(userAnswers).length;
       const totalQuestions = exercise.questions ? exercise.questions.length : 10;
@@ -122,11 +121,7 @@ function Dashboard({ onSelectExercise, onBackToGenerator }) {
 
   const handleClearAllData = () => {
     // Show confirmation dialog
-    const isConfirmed = window.confirm(
-      language === 'he' 
-        ? 'האם אתה בטוח שברצונך למחוק את כל הנתונים? פעולה זו אינה הפיכה.'
-        : 'Are you sure you want to clear all data? This action cannot be undone.'
-    );
+    const isConfirmed = window.confirm(t('clearAllDataConfirm'));
     
     if (isConfirmed) {
       // Clear all exercise data from localStorage
